@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -29,8 +29,8 @@ func GenToken(userInfo *user.User) (string, error) {
 	c := MyClaims{
 		userInfo.Id,
 		userInfo.Type,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(consts.JWTOverTime).Unix(),
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(consts.JWTOverTime)),
 			Issuer:    "kangning",
 		},
 	}

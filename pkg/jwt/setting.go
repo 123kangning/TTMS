@@ -1,11 +1,11 @@
 package jwt
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type MyClaims struct {
 	ID       int64
 	UserType int32
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
