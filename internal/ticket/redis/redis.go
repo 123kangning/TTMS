@@ -90,14 +90,19 @@ func ReleaseLock(lockKey string) bool {
 
 func TicketIsExist(key string) (bool, error) {
 	value, err := redisClient.Get(context.Background(), key).Result()
-	if err == redis.Nil {
-		return false, nil
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, errors.New("票未存在于redis中")
+		}
+		// redis崩溃或超时等错误
+		return false, err
 	}
+
 	if value == "0" { //0-待售（未被预定）
 		return true, nil
 	}
 	//票已经被抢
-	return false, errors.New("票已经被抢")
+	return false, nil
 }
 
 func BuyTicket(ctx context.Context, key string) {

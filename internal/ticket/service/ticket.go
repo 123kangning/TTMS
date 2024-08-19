@@ -128,16 +128,19 @@ func GetAllTicketService(ctx context.Context, req *ticket.GetAllTicketRequest) (
 func TicketIsExist(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int32) (bool, error, string) {
 	key := fmt.Sprintf("%d;%d;%d", ScheduleId, SeatRow, SeatCol)
 	result, err := redis.TicketIsExist(key) //只查看票的状态，不抢票
-	if result {
-		return true, nil, "redis"
-	}
-	if err == nil { //redis没找到，去mysql再找一下
+
+	//redis没找到，去mysql再找一下，防止redis挂了，导致所有用户买不了票
+	//TODO 如果后续新架构要支持防止缓存穿透的场景，应该将‘票未存在于redis中’这种情况直接拒绝。目前用的老架构，票会定时过期，所以还不能改。
+	if err != nil {
 		t := dao.GetTicket(ctx, ScheduleId, SeatRow, SeatCol)
 		if t.Id > 0 && t.Status == 0 {
-			return true, nil, "mysql"
+			return true, err, "mysql"
 		}
 	}
-	return false, errors.New("票已被抢"), ""
+	if result {
+		return true, err, "redis"
+	}
+	return false, err, ""
 }
 func BuyTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int32, source string) {
 	if source == "redis" {
