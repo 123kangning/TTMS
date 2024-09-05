@@ -59,6 +59,9 @@ location /ttms/ {
 	proxy_set_header Host $host;
 }
 ```
+- 前端压缩包有两个，都在script目录下，front_system.zip是管理员界面，front_customer.zip是用户界面。解压之后，放在nginx配置对应的目录下就好
+  - 用户前端放在 `/var/www/build0` ，系统前端放在 `/var/www/build1`
+
 
 ## 运行（单机模拟分布式环境）
 

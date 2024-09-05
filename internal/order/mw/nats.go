@@ -89,11 +89,6 @@ func AddOrderHandler(msg *nats.Msg) {
 		return
 	}
 
-	err := msg.Ack()
-	if err != nil {
-		log.Println(ctx, "ack error", err)
-		return
-	}
 	t := float64(time.Now().Add(consts.OrderDelayTime).Unix())
 	//fmt.Println("time = ", time.Now().Format("2006-01-02 15:04:05"), " unix = ", time.Now().Unix())
 	//fmt.Println("time = ", time.Unix(int64(t), 0).Format("2006-01-02 15:04:05"), " unix = ", t)
@@ -101,8 +96,16 @@ func AddOrderHandler(msg *nats.Msg) {
 	//fmt.Println("orderInfo = ", orderInfo)
 	ToDelayQueue(ctx, orderInfo, t)
 	//fmt.Println(d0, d1, d2, d3, data[4])
-	err = dao.AddOrder(d0, d1, d2, d3, data[4], d5)
+	err := dao.AddOrder(d0, d1, d2, d3, data[4], d5)
+	//暂时未出现这种情况，先不管
 	if err != nil {
-		log.Panicln(err)
+		log.Println("dao.AddOrder failed,err=", err, "msg is", string(msg.Data))
+	}
+
+	//业务消费消息完成之后，再返回ack告知消息队列跳过该消息，获取下一条消息
+	err = msg.Ack()
+	if err != nil {
+		log.Println(ctx, "ack error", err)
+		return
 	}
 }
