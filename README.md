@@ -42,9 +42,8 @@
 
 - 首先确认go版本为1.16～1.20
 - cd 到TTMS主目录下，执行`docker-compose up -d`，一键部署
-- 在云服务器上部署时，需要用nginx从默认的80端口转发到web网关层的8080端口，并解决跨域问题，nginx配置如下，在
+- 在云服务器上部署时，需要用nginx从默认的80端口转发到web网关层的8080端口，并解决跨域问题，nginx配置在`configs/conf.d/default.conf`
 
-`/etc/nginx/sites-available/default`文件中的`server`块中添加
 ```
 location /ttms/ {
    	proxy_pass http://127.0.0.1:8080/ttms/;
@@ -60,7 +59,6 @@ location /ttms/ {
 }
 ```
 - 前端压缩包有两个，都在script目录下，`build1.zip`是管理员界面，`build0.zip`是用户界面。解压之后，放在nginx配置对应的目录下就好
-  - nginx配置在`configs/conf.d/default.conf`
   - 用户前端放在 `/var/www/build0` ，系统前端放在 `/var/www/build1`
   - 管理员前端界面网址`http://localhost:81/`
   - 用户前端界面网址`http://localhost:82/`
