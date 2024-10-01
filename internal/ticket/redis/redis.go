@@ -81,7 +81,7 @@ func ReleaseLock(lockKey string) bool {
 //			if err != nil {
 //				log.Println(err)
 //			}
-//			if d < 2*time.Second { //锁过期时间不足2s时，对锁进行续期
+//			if d < 2*time.Second { //锁过期时间不足2s时，对锁进行续期，可以用val表示续期次数，如果续期到达指定次数，说明该协程执行出错，进行错误处理
 //				redisClient.Expire(ctx, key, consts.RedisLockTimeOut)
 //			}
 //		}
