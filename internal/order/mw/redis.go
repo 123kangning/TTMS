@@ -56,6 +56,9 @@ func ToDelayQueue(ctx context.Context, orderInfo string, timeUnix float64) {
 
 // RemoveFromDelayQueue 按时支付订单，从延时队列中取出该订单
 func RemoveFromDelayQueue(ctx context.Context, req *order.CommitOrderRequest) error {
+	//TODO 修改逻辑，保证幂等 1. 先查看redis中有没有，如果没有，说明订单已经过期，直接返回；2. 调用支付接口；3. 若用户成功支付，将order信息从zSet中删除并修改数据库、若用户支付失败，则不进行任何操作
+	// 第三步redis和MySQL不能保证原子性，这里我们加一个事务，只要保证MySQL状态更新成功就可以了。
+	// 因为就算redis删除失败，在之后订单自动过期的逻辑里，我们也会查看MySQL中订单状态，如果已经支付成功。是不会让订单被退回的。
 	orderInfo := fmt.Sprintf("%d;%d;%d;%d", req.UserId, req.ScheduleId, req.SeatRow, req.SeatCol)
 	log.Println("orderInfo = ", orderInfo)
 	count, err := client.ZRem(ctx, delayQueue, orderInfo).Result()
@@ -72,7 +75,8 @@ func RemoveFromDelayQueue(ctx context.Context, req *order.CommitOrderRequest) er
 		log.Println(err)
 		return err
 	}
-	//向ticket服务提交，更改票状态为已付款
+	// TODO 票的状态似乎并不需要保存是否付款，之后可以干掉这个逻辑
+	// 向ticket服务提交，更改票状态为已付款
 	_, err = JS.Publish("stream.ticket.commit", []byte(fmt.Sprintf("%d;%d;%d", req.ScheduleId, req.SeatRow, req.SeatCol)))
 	if err != nil {
 		log.Panicln("UpdateOrder err = ", err)
@@ -124,7 +128,7 @@ func toTargetQueue(ctx context.Context) {
 func eventLoop(ctx context.Context) {
 	for {
 		results, err := client.BLPop(ctx, time.Second*5, targetQueue).Result()
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			continue
 		}
 		log.Println("now = ", time.Now().Format("2006-01-02 15:04:05"))
@@ -135,6 +139,7 @@ func eventLoop(ctx context.Context) {
 		results = results[1:]
 		log.Println("results = ", results)
 		for _, result := range results {
+			//TODO 为了防止订单在支付过程中，到达了过期时间，这里被意外退票。需要在这里判断一下订单状态是否为已支付，保证让已经支付的订单不会被抛弃。
 			fmt.Println("result = ", result)
 			data := strings.Split(result, ";")
 			fmt.Println("data = ", data)
