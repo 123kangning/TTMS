@@ -3,7 +3,6 @@ package main
 import (
 	"TTMS/configs/consts"
 	"TTMS/internal/ticket/dao"
-	"TTMS/internal/ticket/nats"
 	"TTMS/internal/ticket/redis"
 	"TTMS/internal/ticket/service"
 	ticket "TTMS/kitex_gen/ticket/ticketservice"
@@ -35,9 +34,8 @@ func main() {
 		//server.WithSuite(trace.NewDefaultServerSuite()),                     // tracer
 		server.WithRegistry(r), // registry
 	)
-	service.LoadLocation()
 	dao.Init()
-	go nats.Init()
+	service.NewKafkaEventLoop()
 	redis.Init()
 	service.InitPlayRPC()
 	service.OrderPlayRPC()

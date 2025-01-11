@@ -10,7 +10,6 @@ package service
 import (
 	"TTMS/configs/consts"
 	"TTMS/internal/ticket/dao"
-	"TTMS/internal/ticket/nats"
 	"TTMS/internal/ticket/redis"
 	"TTMS/kitex_gen/order"
 	"TTMS/kitex_gen/order/orderservice"
@@ -20,6 +19,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/segmentio/kafka-go"
+	"github.com/sirupsen/logrus"
 	"log"
 	"time"
 
@@ -32,6 +33,15 @@ import (
 var playClient playservice.Client
 var orderClient orderservice.Client
 var Loc *time.Location
+
+func init() {
+	var err error
+	Loc, err = time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		log.Println("Error loading location:", err)
+		return
+	}
+}
 
 func OrderPlayRPC() {
 	r, err := etcd.NewEtcdResolver([]string{consts.EtcdAddress})
@@ -77,14 +87,7 @@ func InitPlayRPC() {
 	}
 	playClient = c
 }
-func LoadLocation() {
-	var err error
-	Loc, err = time.LoadLocation("Asia/Shanghai")
-	if err != nil {
-		log.Println("Error loading location:", err)
-		return
-	}
-}
+
 func BatchAddTicketService(ctx context.Context, req *ticket.BatchAddTicketRequest) (resp *ticket.BatchAddTicketResponse, err error) {
 	//fmt.Println(req.ScheduleId, req.Price, req.PlayName, req.StudioId, req.List)
 	err = dao.BatchAddTicket(ctx, req.ScheduleId, req.Price, req.PlayName, req.StudioId, req.List)
@@ -195,18 +198,38 @@ func BuyTicketService(ctx context.Context, req *ticket.BuyTicketRequest) (resp *
 	//成功抢到票,发送创建订单消息
 	t := time.Now().Format("2006-01-02 15:04:05")
 	//fmt.Println("time = ", t)
-	pubAck, err := nats.JS.Publish("stream.order.buy",
-		[]byte(fmt.Sprintf("%d;%s;%s;%s", req.UserId, key, t,
-			redis.GetTicketPrice(ctx, fmt.Sprintf("%d;price", req.ScheduleId)))))
+	err = sendMessage(kafka.Message{
+		Value: []byte(fmt.Sprintf("%d;%s;%s;%s", req.UserId, key, t,
+			redis.GetTicketPrice(ctx, fmt.Sprintf("%d;price", req.ScheduleId))))})
 
 	if err != nil {
-		log.Println(ctx, "pubAck:", pubAck, "err=", err.Error())
 		resp.BaseResp.StatusCode = 1
 		resp.BaseResp.StatusMessage = err.Error()
 	} else {
 		resp.BaseResp.StatusMessage = "success"
 	}
 	return resp, nil
+}
+
+func sendMessage(msg kafka.Message) error {
+	w := &kafka.Writer{
+		Addr:         kafka.TCP(consts.KafkaBroker1Url, consts.KafkaBroker2Url, consts.KafkaBroker3Url),
+		Topic:        consts.OrderBuyTopic,
+		Balancer:     &kafka.LeastBytes{}, //Hash, RoundRobin, LeastBytes
+		RequiredAcks: kafka.RequireOne,    //Leader写入成功即可
+	}
+	defer func() {
+		if err := w.Close(); err != nil {
+			logrus.Error("failed to close writer:", err)
+		}
+	}()
+
+	err := w.WriteMessages(context.Background(), msg)
+	if err != nil {
+		logrus.Error(w.Topic, "failed to write messages:", err)
+		return err
+	}
+	return nil
 }
 
 func ReturnTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int32) {

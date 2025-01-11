@@ -12,6 +12,8 @@ require (
 	github.com/kitex-contrib/tracer-opentracing v0.0.2
 	github.com/nats-io/nats.go v1.28.0
 	github.com/redis/go-redis/v9 v9.0.2
+	github.com/segmentio/kafka-go v0.4.47
+	github.com/sirupsen/logrus v1.7.0
 	golang.org/x/crypto v0.22.0
 	google.golang.org/protobuf v1.33.0
 	gorm.io/driver/mysql v1.4.7
@@ -69,6 +71,7 @@ require (
 	github.com/oleiade/lane v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.1 // indirect
+	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
