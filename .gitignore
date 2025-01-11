@@ -1,12 +1,10 @@
 /**/.idea
-/**/jetstream-cluster
 script/ttms_web
 script/ttms_user
 script/ttms_play
 script/ttms_studio
 script/ttms_ticket
 script/ttms_order
-script/mysql
 script/log
-script/redis
+data/*
 /**/test

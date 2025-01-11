@@ -1,0 +1,13 @@
+kafka:
+  clusters:
+    -
+      name: ttms-kafka
+      bootstrapServers: kafka1:9091,kafka2:9092,kafka3:9093
+#      schemaRegistry: http://localhost:2181
+#      schemaRegistryAuth:
+#        username: username
+#        password: password
+      #     schemaNameTemplate: "%s-value"
+      metrics:
+        port: 9997
+        type: JMX

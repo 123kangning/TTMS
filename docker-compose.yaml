@@ -12,6 +12,7 @@ services:
 #      - ./configs/conf.d/:/etc/nginx/conf.d/
   mysql:
     image: "mariadb:10.11.2"
+    container_name: mysql
     command: [ "--max_connections=1000" ]
     ports:
       - "3307:3306"
@@ -23,10 +24,11 @@ services:
       #- MYSQL_MAX_CONNECTIONS = 300 #暂时不起作用
       - MYSQL_DATABASE=high_frequency
     volumes:
-      - ./script/mysql:/var/lib/mysql
+      - ./data/mysql:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   Etcd:
     image: "quay.io/coreos/etcd:v3.5.5"
+    container_name: etcd
     environment:
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
       - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
@@ -35,48 +37,115 @@ services:
       - "2379:2379"
   redis:
     image: "redis:latest"
+    container_name: redis
     environment:
       - REDIS_PASSWORD=redis
     ports:
       - "6378:6379"
     volumes:
-      - ./script/redis/data:/data
-  #启动时有几秒的时间不能工作，吓我一跳，还以为配置哪里错了
-  nats1:
-    container_name: nats1
-    image: nats:latest
-    #    entrypoint: /nats-server
-    command: --name nats1 --cluster_name JSC --js  --sd /data --cluster nats://0.0.0.0:4245 --routes nats://nats1:4245,nats://nats2:4245,nats://nats3:4245 -p 4222
-    networks:
-      - nats
-    ports:
-      - "4222:4222"
-    volumes:
-      - ./jetstream-cluster/nats1:/data
+      - ./data/redis/data:/data
+#  #启动时有几秒的时间不能工作，吓我一跳，还以为配置哪里错了
+#  nats1:
+#    container_name: nats1
+#    image: nats:latest
+#    #    entrypoint: /nats-server
+#    command: --name nats1 --cluster_name JSC --js  --sd /data --cluster nats://0.0.0.0:4245 --routes nats://nats1:4245,nats://nats2:4245,nats://nats3:4245 -p 4222
+#    networks:
+#      - nats
+#    ports:
+#      - "4222:4222"
+#    volumes:
+#      - ./jetstream-cluster/nats1:/data
+#
+#  nats2:
+#    container_name: nats2
+#    image: nats:latest
+#    #    entrypoint: /nats-server
+#    command: --name nats2 --cluster_name JSC --js --sd /data --cluster nats://0.0.0.0:4245 --routes nats://nats1:4245,nats://nats2:4245,nats://nats3:4245 -p 4222
+#    networks:
+#      - nats
+#    ports:
+#      - "4223:4222"
+#    volumes:
+#      - ./jetstream-cluster/nats2:/data
+#
+#  nats3:
+#    container_name: nats3
+#    image: nats:latest
+#    #    entrypoint: /nats-server
+#    command: --name nats3 --cluster_name JSC --js --sd /data --cluster nats://0.0.0.0:4245 --routes nats://nats1:4245,nats://nats2:4245,nats://nats3:4245 -p 4222
+#    networks:
+#      - nats
+#    ports:
+#      - "4224:4222"
+#    volumes:
+#      - ./jetstream-cluster/nats3:/data
 
-  nats2:
-    container_name: nats2
-    image: nats:latest
-    #    entrypoint: /nats-server
-    command: --name nats2 --cluster_name JSC --js --sd /data --cluster nats://0.0.0.0:4245 --routes nats://nats1:4245,nats://nats2:4245,nats://nats3:4245 -p 4222
-    networks:
-      - nats
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
     ports:
-      - "4223:4222"
-    volumes:
-      - ./jetstream-cluster/nats2:/data
-
-  nats3:
-    container_name: nats3
-    image: nats:latest
-    #    entrypoint: /nats-server
-    command: --name nats3 --cluster_name JSC --js --sd /data --cluster nats://0.0.0.0:4245 --routes nats://nats1:4245,nats://nats2:4245,nats://nats3:4245 -p 4222
-    networks:
-      - nats
+      - "2181:2181"
+    restart: always
+  kafka1:
+    image: wurstmeister/kafka
+    depends_on: [ zookeeper ]
+    container_name: kafka1
     ports:
-      - "4224:4222"
+      - "9091:9091"
+    environment:
+      HOSTNAME: kafka1
+      KAFKA_BROKER_ID: 0
+      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 6000
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9091
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9091
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181/kafka
+    extra_hosts:
+      - "kafka1:172.17.0.1"
     volumes:
-      - ./jetstream-cluster/nats3:/data
+      - ./data/kafka1:/kafka
+  kafka2:
+    image: wurstmeister/kafka
+    depends_on: [ zookeeper ]
+    container_name: kafka2
+    ports:
+      - "9092:9092"
+    environment:
+      HOSTNAME: kafka2
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 6000
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181/kafka
+    extra_hosts:
+      - "kafka2:172.17.0.1"
+    volumes:
+      - ./data/kafka2:/kafka
+  kafka3:
+    image: wurstmeister/kafka
+    depends_on: [ zookeeper ]
+    container_name: kafka3
+    ports:
+      - "9093:9093"
+    environment:
+      HOSTNAME: kafka3
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 6000
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9093
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181/kafka
+    extra_hosts:
+      - "kafka3:172.17.0.1"
+    volumes:
+      - ./data/kafka3:/kafka
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    volumes:
+      - ./configs/kafka-ui/dynamic_config.yaml:/etc/kafkaui/dynamic_config.yaml
 
-networks:
-  nats: { }
+# kafka-topics.sh --create --zookeeper 172.17.0.1:2181/kafka --replication-factor 1 --partitions 2 --topic testtopic
