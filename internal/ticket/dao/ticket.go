@@ -19,7 +19,6 @@ func BatchAddTicket(ctx context.Context, ScheduleId int64, Price int32, PlayName
 		tickets[i].SeatCol = int32(s.Col)
 		tickets[i].StudioId = StudioId
 	}
-	//fmt.Println(tickets)
 	return DB.WithContext(ctx).Create(&tickets).Error
 }
 
@@ -34,12 +33,6 @@ func GetAllTicket(ctx context.Context, ScheduleId int64) ([]*ticket.Ticket, erro
 	return tickets, err
 }
 
-func GetAllTicket2(ctx context.Context) ([]*ticket.Ticket, error) {
-	var tickets []*ticket.Ticket
-	err := DB.WithContext(ctx).Find(&tickets).Error
-	return tickets, err
-}
-
 func GetTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int32) *ticket.Ticket {
 	t := ticket.Ticket{}
 	DB.WithContext(ctx).Model(&ticket.Ticket{}).Where("schedule_id = ? and seat_row = ? and seat_col = ?", ScheduleId, SeatRow, SeatCol).Find(&t).Limit(1)
@@ -47,7 +40,7 @@ func GetTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int
 }
 
 func BuyTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int32) {
-	err := DB.WithContext(ctx).Model(&ticket.Ticket{}).Where("schedule_id = ? and seat_row = ? and seat_col = ?", ScheduleId, SeatRow, SeatCol).Limit(1).Update("status", 9).Error
+	err := DB.WithContext(ctx).Model(&ticket.Ticket{}).Where("schedule_id = ? and seat_row = ? and seat_col = ?", ScheduleId, SeatRow, SeatCol).Limit(1).Update("status", 1).Error
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -62,11 +55,4 @@ func ReturnTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol 
 		log.Panicln(err)
 	}
 	//}
-}
-
-func CommitTicket(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol int32) {
-	err := DB.WithContext(ctx).Model(&ticket.Ticket{}).Where("schedule_id = ? and seat_row = ? and seat_col = ?", ScheduleId, SeatRow, SeatCol).Update("status", 1).Error
-	if err != nil {
-		log.Panicln(err)
-	}
 }

@@ -2,8 +2,6 @@ package main
 
 import (
 	"TTMS/configs/consts"
-	"TTMS/internal/ticket/dao"
-	"TTMS/internal/ticket/redis"
 	"TTMS/internal/ticket/service"
 	ticket "TTMS/kitex_gen/ticket/ticketservice"
 	"net"
@@ -34,9 +32,7 @@ func main() {
 		//server.WithSuite(trace.NewDefaultServerSuite()),                     // tracer
 		server.WithRegistry(r), // registry
 	)
-	dao.Init()
 	service.NewKafkaEventLoop()
-	redis.Init()
 	service.InitPlayRPC()
 	service.OrderPlayRPC()
 	err = svr.Run()

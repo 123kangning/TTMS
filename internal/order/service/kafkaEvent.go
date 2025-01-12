@@ -79,3 +79,22 @@ func AddOrderHandler(msg kafka.Message) error {
 	//业务消费消息完成之后，再返回commit告知消息队列跳过该消息，获取下一条消息
 	return nil
 }
+
+func sendMessage(msg kafka.Message) {
+	w := &kafka.Writer{
+		Addr:         kafka.TCP(consts.KafkaBroker1Url, consts.KafkaBroker2Url, consts.KafkaBroker3Url),
+		Topic:        consts.TicketTimeoutTopic,
+		Balancer:     &kafka.LeastBytes{}, //Hash, RoundRobin, LeastBytes
+		RequiredAcks: kafka.RequireOne,    //Leader写入成功即可
+	}
+	defer func() {
+		if err := w.Close(); err != nil {
+			logrus.Error("failed to close writer:", err)
+		}
+	}()
+
+	err := w.WriteMessages(context.Background(), msg)
+	if err != nil {
+		logrus.Error(w.Topic, "failed to write messages:", err)
+	}
+}

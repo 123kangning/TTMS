@@ -137,11 +137,11 @@ func TicketIsExist(ctx context.Context, ScheduleId int64, SeatRow int32, SeatCol
 	if err != nil {
 		t := dao.GetTicket(ctx, ScheduleId, SeatRow, SeatCol)
 		if t.Id > 0 && t.Status == 0 {
-			return true, err, "mysql"
+			return true, nil, "mysql"
 		}
 	}
 	if result {
-		return true, err, "redis"
+		return true, nil, "redis"
 	}
 	return false, err, ""
 }
