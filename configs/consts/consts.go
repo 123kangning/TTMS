@@ -26,8 +26,8 @@ const (
 const (
 	TicketGroupID      = "ticket"
 	OrderGroupID       = "order"
-	TicketTimeoutTopic = "ticket.timeout"
-	OrderBuyTopic      = "order.buy"
+	TicketTimeoutTopic = "ticket-timeout"
+	OrderBuyTopic      = "order-buy"
 )
 
 // 超时配置
