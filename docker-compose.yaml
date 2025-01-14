@@ -82,15 +82,15 @@ services:
 #      - ./jetstream-cluster/nats3:/data
 
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: zookeeper
     container_name: zookeeper
     ports:
       - "2181:2181"
     restart: always
-    volumes:
-      # 如果之后zookeeper版本升级了，可能需要修改这个路径
-      - ./data/zookeeper/data:/opt/zookeeper-3.4.13/data
-      - ./data/zookeeper/datalog:/opt/zookeeper-3.4.13/datalog
+#    volumes:
+##       如果之后zookeeper版本升级了，可能需要修改这个路径
+#      - ./data/zookeeper/data:/data
+#      - ./data/zookeeper/datalog:/datalog
   kafka1:
     image: wurstmeister/kafka
     depends_on: [ zookeeper ]
@@ -99,7 +99,7 @@ services:
       - "9091:9091"
     environment:
       HOSTNAME: kafka1
-#      KAFKA_BROKER_ID: 0
+      KAFKA_BROKER_ID: 0
 #      KAFKA_CLUSTER_ID: your_cluster_id
       KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 6000
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9091
@@ -107,17 +107,17 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181/kafka
     extra_hosts:
       - "kafka1:172.17.0.1"
-    volumes:
-      - ./data/kafka1:/kafka
+#    volumes:
+#      - ./data/kafka1:/kafka
   kafka2:
     image: wurstmeister/kafka
-    depends_on: [ zookeeper ]
+    depends_on: [ zookeeper,kafka1 ]
     container_name: kafka2
     ports:
       - "9092:9092"
     environment:
       HOSTNAME: kafka2
-#      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_ID: 1
 #      KAFKA_CLUSTER_ID: your_cluster_id
       KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 6000
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
@@ -125,17 +125,17 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181/kafka
     extra_hosts:
       - "kafka2:172.17.0.1"
-    volumes:
-      - ./data/kafka2:/kafka
+#    volumes:
+#      - ./data/kafka2:/kafka
   kafka3:
     image: wurstmeister/kafka
-    depends_on: [ zookeeper ]
+    depends_on: [ zookeeper,kafka1 ]
     container_name: kafka3
     ports:
       - "9093:9093"
     environment:
       HOSTNAME: kafka3
-#      KAFKA_BROKER_ID: 2
+      KAFKA_BROKER_ID: 2
 #      KAFKA_CLUSTER_ID: your_cluster_id
       KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 6000
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9093
@@ -143,8 +143,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181/kafka
     extra_hosts:
       - "kafka3:172.17.0.1"
-    volumes:
-      - ./data/kafka3:/kafka
+#    volumes:
+#      - ./data/kafka3:/kafka
   kafka-ui:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui
@@ -155,4 +155,5 @@ services:
     volumes:
       - ./configs/kafka-ui/dynamic_config.yaml:/etc/kafkaui/dynamic_config.yaml
 
-# kafka-topics.sh --create --zookeeper 172.17.0.1:2181/kafka --replication-factor 1 --partitions 2 --topic testtopic
+# kafka-topics.sh --create --zookeeper 172.17.0.1:2181/kafka --replication-factor 2 --partitions 3 --topic ticket.timeout
+# kafka-topics.sh --create --zookeeper 172.17.0.1:2181/kafka --replication-factor 2 --partitions 3 --topic order.buy

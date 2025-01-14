@@ -5,6 +5,7 @@ import (
 	"TTMS/internal/order/dao"
 	"TTMS/internal/order/service"
 	order "TTMS/kitex_gen/order/orderservice"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 
@@ -33,6 +34,7 @@ func main() {
 		//server.WithSuite(trace.NewDefaultServerSuite()),                     // tracer
 		server.WithRegistry(r), // registry
 	)
+	logrus.SetLevel(logrus.DebugLevel)
 	dao.Init()
 	service.InitPlayRPC()
 	service.NewKafkaEventLoop()

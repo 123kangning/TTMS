@@ -4,6 +4,7 @@ import (
 	"TTMS/configs/consts"
 	"TTMS/internal/ticket/service"
 	ticket "TTMS/kitex_gen/ticket/ticketservice"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 
@@ -32,6 +33,7 @@ func main() {
 		//server.WithSuite(trace.NewDefaultServerSuite()),                     // tracer
 		server.WithRegistry(r), // registry
 	)
+	logrus.SetLevel(logrus.DebugLevel)
 	service.NewKafkaEventLoop()
 	service.InitPlayRPC()
 	service.OrderPlayRPC()

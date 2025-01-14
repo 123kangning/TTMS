@@ -31,6 +31,7 @@
 - 首先确认go版本为1.16～1.20
 - cd 到TTMS主目录下，执行`docker-compose up -d`，一键部署
   - &#x2757;在`/etc/hosts`中加上`configs/conf.d/hosts`中的配置，如果不设置会导致访问不到broker节点，应该是Leader节点重定向导致的
+  - 每次启动kafka集群后，执行`init_topic.sh`初始化topic，因为一些配置问题，没有做volume,测试环境凑合着用
 - 在云服务器上部署时，需要用nginx从默认的80端口转发到web网关层的8080端口，并解决跨域问题，nginx配置在`configs/conf.d/default.conf`
 
 ```
