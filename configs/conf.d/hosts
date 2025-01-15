@@ -1,0 +1,5 @@
+# 用于kafka重定向时，对kafka1等host的解析，如果不设置会导致访问不到broker节点
+
+172.17.0.1 kafka1
+172.17.0.1 kafka2
+172.17.0.1 kafka3

@@ -1,0 +1,8 @@
+kafka:
+  clusters:
+    -
+      name: ttms-kafka
+      bootstrapServers: kafka1:9091,kafka2:9092,kafka3:9093
+      metrics:
+        port: 9997
+        type: JMX

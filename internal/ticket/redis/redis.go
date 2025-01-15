@@ -2,18 +2,17 @@ package redis
 
 import (
 	"TTMS/configs/consts"
-	"TTMS/internal/ticket/dao"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"log"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
 var redisClient *redis.Client
 
-func Init() {
+func init() {
 	redisClient = redis.NewClient(&redis.Options{
 		Addr:     consts.RedisAddress,
 		Password: consts.RedisPassword,
@@ -24,21 +23,6 @@ func Init() {
 	//	panic(err)
 	//}
 	//go LockRenewal()
-}
-
-// InitAllTicket 将所有票加载到redis缓存中（已弃用）
-func InitAllTicket(ctx context.Context) error {
-	// 票信息 键值对 key="ScheduleId:SeatRow:SeatCol" value="Status"
-	tickets, err := dao.GetAllTicket2(ctx)
-	if err != nil {
-		log.Panicln(err)
-		return err
-	}
-	for _, ticket := range tickets {
-		redisClient.Set(ctx, fmt.Sprintf("%d;%d;%d", ticket.ScheduleId, ticket.SeatRow, ticket.SeatCol), ticket.Status, 0)
-		redisClient.Set(ctx, fmt.Sprintf("%d;%d;%d;price", ticket.ScheduleId, ticket.SeatRow, ticket.SeatCol), ticket.Price, 0)
-	}
-	return nil
 }
 
 // AddTicket 添加票缓存
@@ -108,7 +92,7 @@ func TicketIsExist(key string) (bool, error) {
 func BuyTicket(ctx context.Context, key string) {
 	ttl := TicketTTL(ctx, key)
 	if ttl > 0 {
-		redisClient.Set(ctx, key, "9", ttl)
+		redisClient.Set(ctx, key, "1", ttl)
 	}
 }
 func ReturnTicket(ctx context.Context, key string) {
@@ -117,23 +101,18 @@ func ReturnTicket(ctx context.Context, key string) {
 		redisClient.Set(ctx, key, "0", ttl)
 	}
 }
-func CommitTicket(ctx context.Context, key string) {
-	ttl := TicketTTL(ctx, key)
-	if ttl > 0 {
-		redisClient.Set(ctx, key, "1", ttl)
-	}
-}
+
 func GetTicketPrice(ctx context.Context, key string) string {
 	price, err := redisClient.Get(ctx, key).Result()
 	if err != nil {
-		log.Println("GetTicketPrice ", err)
+		logrus.Error("GetTicketPrice ", err)
 	}
 	return price
 }
 func TicketTTL(ctx context.Context, key string) time.Duration {
 	d, err := redisClient.TTL(ctx, key).Result()
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 	}
 	return d
 }

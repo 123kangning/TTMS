@@ -2,11 +2,9 @@ package main
 
 import (
 	"TTMS/configs/consts"
-	"TTMS/internal/ticket/dao"
-	"TTMS/internal/ticket/nats"
-	"TTMS/internal/ticket/redis"
 	"TTMS/internal/ticket/service"
 	ticket "TTMS/kitex_gen/ticket/ticketservice"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 
@@ -35,10 +33,8 @@ func main() {
 		//server.WithSuite(trace.NewDefaultServerSuite()),                     // tracer
 		server.WithRegistry(r), // registry
 	)
-	service.LoadLocation()
-	dao.Init()
-	go nats.Init()
-	redis.Init()
+	logrus.SetLevel(logrus.DebugLevel)
+	service.NewKafkaEventLoop()
 	service.InitPlayRPC()
 	service.OrderPlayRPC()
 	err = svr.Run()

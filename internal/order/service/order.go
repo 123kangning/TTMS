@@ -10,7 +10,6 @@ package service
 import (
 	"TTMS/configs/consts"
 	"TTMS/internal/order/dao"
-	"TTMS/internal/order/mw"
 	"TTMS/kitex_gen/order"
 	"TTMS/kitex_gen/play"
 	"TTMS/kitex_gen/play/playservice"
@@ -97,7 +96,7 @@ func GetOrderAnalysisService(ctx context.Context, req *order.GetOrderAnalysisReq
 }
 func CommitOrderService(ctx context.Context, req *order.CommitOrderRequest) (resp *order.CommitOrderResponse, err error) {
 	resp = &order.CommitOrderResponse{BaseResp: &order.BaseResp{}}
-	err = mw.RemoveFromDelayQueue(ctx, req)
+	err = RemoveFromDelayQueue(ctx, req)
 	if err != nil {
 		resp.BaseResp.StatusCode = 1
 		resp.BaseResp.StatusMessage = err.Error()

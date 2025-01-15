@@ -3,9 +3,9 @@ package main
 import (
 	"TTMS/configs/consts"
 	"TTMS/internal/order/dao"
-	"TTMS/internal/order/mw"
 	"TTMS/internal/order/service"
 	order "TTMS/kitex_gen/order/orderservice"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 
@@ -34,11 +34,10 @@ func main() {
 		//server.WithSuite(trace.NewDefaultServerSuite()),                     // tracer
 		server.WithRegistry(r), // registry
 	)
-	mw.LoadLocation()
+	logrus.SetLevel(logrus.DebugLevel)
 	dao.Init()
-	mw.InitRedis()
 	service.InitPlayRPC()
-	go mw.InitNats()
+	service.NewKafkaEventLoop()
 	err = svr.Run()
 	if err != nil {
 		klog.Fatal(err)

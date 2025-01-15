@@ -9,7 +9,7 @@ import (
 
 var DB *gorm.DB
 
-func Init() {
+func init() {
 	var err error
 	//db, err := sql.Open("mysql", consts.MySQLDefaultDSN)
 	//db.SetMaxOpenConns(10000)
